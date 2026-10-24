@@ -6,6 +6,7 @@
 #include <QQmlApplicationEngine>
 #include <gst/gst.h>
 #include "video/receiver.h"
+#include "dronemanager.h"
 
 
 
@@ -39,12 +40,15 @@ int main(int argc, char *argv[])
         qCritical() << "qml6glsink missing; install gstreamer1-plugins-good-qt6";
         return 1;
     }
+    /////////////////////////////
     Receiver receiver;
     receiver.setTestVideo(parser.isSet("test-video"));
+    DroneManager droneManager;
     //
     QQmlApplicationEngine engine;
     engine.setInitialProperties({
-        {"receiver", QVariant::fromValue( &receiver )}
+        {"receiver", QVariant::fromValue( &receiver )},
+        {"dm", QVariant::fromValue( &droneManager )}
     });
     engine.loadFromModule("DroneGroundControl", "Main");
     //

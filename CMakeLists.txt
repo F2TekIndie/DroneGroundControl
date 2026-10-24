@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(THIRD_PARTY_ROOT "/home/f2tek/SwDev" CACHE PATH "Root of third-party libraries")
 
 #
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Location Positioning)
 
 #
 find_package(Boost REQUIRED COMPONENTS system)
@@ -16,11 +16,23 @@ find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GST REQUIRED IMPORTED_TARGET gstreamer-1.0>=1.22)
 
+add_subdirectory(
+    "${CMAKE_CURRENT_SOURCE_DIR}/../DroneSDK/protocol"
+    "${CMAKE_CURRENT_BINARY_DIR}/dronesdkproto"
+)
+add_subdirectory(
+    "${CMAKE_CURRENT_SOURCE_DIR}/../DroneSDK/sources"
+    "${CMAKE_CURRENT_BINARY_DIR}/dronesdksrc"
+)
+
+
 qt_standard_project_setup(REQUIRES 6.11)
 
 qt_add_executable(dgc
     src/main.cpp
     src/video/receiver.h src/video/receiver.cpp
+    src/dronemanager.h src/dronemanager.cpp
+    src/com/asio.h src/com/asio.cpp
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -39,23 +51,28 @@ target_link_libraries(dgc PRIVATE
     Qt6::Gui
     Qt6::Qml
     Qt6::Quick
+    Qt6::Location
+    Qt6::Positioning
     Boost::system
     Threads::Threads
     PkgConfig::GST
+    DGCProto
+    DGCSources
 )
 
 target_include_directories(dgc PRIVATE
     ui
     src/video
+    src
 )
 
 qt_add_qml_module(dgc
     URI DroneGroundControl
     VERSION 1.0
-    QML_FILES ui/Main.qml ui/droneList.qml ui/cameraView.qml ui/droneMap.qml
+    QML_FILES ui/Main.qml ui/DroneList.qml ui/CameraView.qml ui/DroneMap.qml
     RESOURCE_PREFIX /dgc
     NO_RESOURCE_TARGET_PATH
-    SOURCES src/video/receiver.h
+    SOURCES src/video/receiver.h src/dronemanager.h
 )
 
 install(TARGETS dgc
