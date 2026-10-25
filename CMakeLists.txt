@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.20)
 
 project(DroneGroundContorl VERSION 0.1 LANGUAGES CXX)
 
@@ -32,7 +32,6 @@ qt_add_executable(dgc
     src/main.cpp
     src/video/receiver.h src/video/receiver.cpp
     src/dronemanager.h src/dronemanager.cpp
-    src/com/asio.h src/com/asio.cpp
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
