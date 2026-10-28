@@ -5,7 +5,7 @@ and testing. Features, APIs, and protocols are incomplete and may change; it is
 not production-ready.
 
 Qt 6/QML desktop application for receiving drone video and displaying a map.
-The current development target is Fedora 44 with system Qt 6.11.
+The current development target is Fedora Linux with Qt 6.11 or later.
 
 ## Current status
 
@@ -18,7 +18,11 @@ Implemented:
 - An OpenStreetMap view with pan and zoom controls.
 
 `DroneManager` and the drone list are scaffolding. Server communication,
-telemetry display, and drone commands are not implemented yet.
+telemetry display, and drone commands are not implemented yet. The sibling
+server caches simulator telemetry and synchronizes it to SQLite in the
+background, but this application does not read it
+or subscribe to MQTT. See the [server startup instructions](../DGCServer/README.md)
+for the separate simulator/broker/database workflow.
 
 ## Related repositories
 
@@ -32,17 +36,19 @@ DroneGroundControl/
 └── DroneSDK/
 ```
 
-- [DGCServer](../DGCServer/README.md): server and simulator scaffolding.
-- [DroneSDK](../DroneSDK/README.md): shared messages and C++ library scaffolding.
+- [DGCServer](../DGCServer/README.md): MQTT simulator, drone cache, SQLite synchronization,
+  and gRPC service scaffolding.
+- [DroneSDK](../DroneSDK/README.md): shared Protobuf messages and gRPC service definitions.
 
 ## Dependencies
 
 - A C++23 compiler and a CMake version compatible with the chosen Qt toolchain
-  (the project declares CMake 3.20 as its minimum).
+  (the project declares CMake 3.21 as its minimum).
 - Qt 6.11 or later: Core, Gui, Qml, Quick, Location, and Positioning, including
   the Qt Quick Controls and Layouts QML modules.
 - Boost.System and threading support.
 - Protocol Buffers compiler and development library.
+- gRPC C++ development files, CMake package configuration, and `grpc_cpp_plugin`.
 - pkg-config and GStreamer development files, version 1.22 or later.
 - GStreamer runtime elements: `udpsrc`, `rtpjitterbuffer`, `rtph264depay`,
   `h264parse`, `openh264dec`, `queue`, `videoconvert`, `identity`, `glupload`,
@@ -61,7 +67,9 @@ cmake -S . -B build/local -DCMAKE_BUILD_TYPE=Debug
 cmake --build build/local --parallel
 ```
 
-Protocol Buffer sources are generated automatically from the sibling SDK.
+Protocol Buffer message classes and gRPC client/server bindings are generated
+automatically from the sibling SDK. Linking these bindings does not yet connect
+the desktop application to DGCServer.
 Use a fresh build directory when switching Qt kits.
 
 ## Run

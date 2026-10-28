@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.21)
 
 project(DroneGroundContorl VERSION 0.1 LANGUAGES CXX)
 
@@ -20,18 +20,14 @@ add_subdirectory(
     "${CMAKE_CURRENT_SOURCE_DIR}/../DroneSDK/protocol"
     "${CMAKE_CURRENT_BINARY_DIR}/dronesdkproto"
 )
-add_subdirectory(
-    "${CMAKE_CURRENT_SOURCE_DIR}/../DroneSDK/sources"
-    "${CMAKE_CURRENT_BINARY_DIR}/dronesdksrc"
-)
-
 
 qt_standard_project_setup(REQUIRES 6.11)
 
 qt_add_executable(dgc
     src/main.cpp
     src/video/receiver.h src/video/receiver.cpp
-    src/dronemanager.h src/dronemanager.cpp
+    src/dronemanager.h src/dronemanager.cpp src/drone.h
+    src/grpcclient.h src/grpcclient.cpp
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -56,7 +52,6 @@ target_link_libraries(dgc PRIVATE
     Threads::Threads
     PkgConfig::GST
     DGCProto
-    DGCSources
 )
 
 target_include_directories(dgc PRIVATE
