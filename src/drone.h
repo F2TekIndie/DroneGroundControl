@@ -1,26 +1,27 @@
-
-#ifndef DRONE_H
-#define DRONE_H
+#pragma once
 
 #include <QString>
 
 
 
-
 //
 struct DronePosition{
-    double _lang;
-    double _lat;
+    double latitude{};
+    double longitude{};
 };
 
 //
 struct Drone{
-    quint32 _droneId;
-    quint32 _clientId;
-    QString  _name;
-    quint32 _state;
-    bool    _online;
-    DronePosition _pos;
+    QString _droneId;
+    quint32 _clientId{};
+    QString _name;
+    QString _type;
 };
 
-#endif // DRONE_H
+//
+struct DroneAttributes{
+    quint32       _state{};
+    bool          _online{};
+    DronePosition _pos{};
+    bool          _hasPosition{};
+};

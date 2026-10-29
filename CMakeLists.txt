@@ -82,3 +82,17 @@ qt_generate_deploy_qml_app_script(
     DEPLOY_USER_QML_MODULES_ON_UNSUPPORTED_PLATFORM
 )
 install(SCRIPT ${deploy_script})
+
+include(CTest)
+if(BUILD_TESTING)
+    find_package(Qt6 REQUIRED COMPONENTS Test)
+    qt_add_executable(dgc_rpc_test
+        tests/grpcclient_test.cpp
+        src/grpcclient.h src/grpcclient.cpp
+        src/dronemanager.h src/dronemanager.cpp src/drone.h
+    )
+    target_include_directories(dgc_rpc_test PRIVATE src)
+    target_link_libraries(dgc_rpc_test PRIVATE Qt6::Test Qt6::Qml DGCProto)
+    add_test(NAME dgc_rpc COMMAND dgc_rpc_test)
+    set_tests_properties(dgc_rpc PROPERTIES TIMEOUT 30)
+endif()

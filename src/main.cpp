@@ -66,6 +66,7 @@ int main(int argc, char *argv[])
         return 1;
     }
     receiver.attach(window, item);
+    droneManager.refreshDrones();
     if (parser.isSet("start"))
         QTimer::singleShot(0, &receiver, &Receiver::start);
     if (parser.isSet("snapshot")) {
@@ -77,8 +78,10 @@ int main(int argc, char *argv[])
         });
     }
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &receiver, &Receiver::stop);
+    QObject::connect(&app, &QCoreApplication::aboutToQuit, &droneManager, &DroneManager::shutdown);
     //
     const int result = app.exec();
+    droneManager.shutdown();
     receiver.stop(); // Engine and its video item are still alive here.
     return result;
 }

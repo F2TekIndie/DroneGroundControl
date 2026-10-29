@@ -1,47 +1,87 @@
+#pragma once
 
-#ifndef GRPCCLIENT_H
-#define GRPCCLIENT_H
-
-#include <cstdint>
+#include "drone.h"
+#include <QVector>
+#include <chrono>
+#include <expected>
 #include <memory>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/server_credentials.h>
-#include <grpcpp/support/status.h>
-#include "devices.grpc.pb.h"
-#include "attributes.grpc.pb.h"
-#include "timeseries.grpc.pb.h"
+#include <optional>
+
 
 
 //
-struct ioClient;
+struct DroneRef{
+    QString id;
+    quint32 clientId{};
+};
+
+// Optional fields distinguish an omitted attribute from false, zero, or (0, 0).
+// Used for partial writes and single-attribute replies, not stored drone state.
+struct DroneAttributeChanges{
+    std::optional<quint32>       state;
+    std::optional<bool>          online;
+    std::optional<DronePosition> position;
+};
+
+//
+struct DroneSample{
+    QString name;
+    qint64  timestampMs{};
+    double  coordinate{};
+};
+using DroneSamples = QVector<DroneSample>;
+
+// No transport types cross this boundary. Calls are synchronous; the manager
+// runs them in QRunnable jobs. One client can serve multiple concurrent jobs.
+enum class RpcErrorCode{
+    Cancelled,
+    Timeout,
+    Unavailable,
+    NotFound,
+    InvalidRequest,
+    Rejected,
+    InvalidResponse,
+    ResourceExhausted,
+    Internal
+};
+
+//
+struct RpcError{
+    RpcErrorCode code;
+    QString      message;
+};
+template <class T> using RpcResult = std::expected<T, RpcError>;
 
 //
 class gRPCClient
 {
 public:
-    gRPCClient();
-    ~gRPCClient() = default;
+    explicit gRPCClient( QString                   endpoint = QStringLiteral( "127.0.0.1:5600" ),
+                         std::chrono::milliseconds timeout  = std::chrono::seconds( 5 ) );
+    ~gRPCClient();
+    gRPCClient( gRPCClient const& )            = delete;
+    gRPCClient& operator=( gRPCClient const& ) = delete;
 
-    //
-    bool createDrone( uint32_t clientId ) const;
-    bool deleteDrone( uint32_t droneId ) const;
-    bool getDrones( uint32_t clientId ) const;
-    //
-    bool updateAttributes( uint32_t deviceId ) const;
-    bool getAttribute( uint32_t deviceId ) const;
-    bool getAttributes( uint32_t deviceId ) const;
-    bool updatePosition( uint32_t deviceId ) const;
-    bool getPosition( uint32_t devicdeviceIdeId ) const;
-    //
-    bool addTimeseries( uint32_t droneId ) const;
-    bool getTimeseries( uint32_t droneId ) const;
-    bool getTimeseriesRange( uint32_t droneId ) const;
+    RpcResult<Drone> createDrone( quint32 clientId ) const;
+    RpcResult<void> deleteDrone( DroneRef const& drone ) const;
+    RpcResult<QVector<Drone>> getDrones( quint32 clientId ) const;
+    RpcResult<void> updateAttributes( DroneRef const& drone, DroneAttributeChanges const& values ) const;
+    RpcResult<DroneAttributeChanges> getAttribute( DroneRef const& drone, QString const& name ) const;
+    RpcResult<DroneAttributes> getAttributes( DroneRef const& drone ) const;
+    RpcResult<void> updatePosition( DroneRef const& drone, DronePosition const& position ) const;
+    RpcResult<DronePosition> getPosition( DroneRef const& drone ) const;
+    RpcResult<void> addTimeseries( DroneRef const& drone, DroneSamples const& samples ) const;
+    RpcResult<DroneSample> getTimeseries( DroneRef const& drone, QString const& name,
+                                          std::optional<qint64> timestampMs = {} ) const;
+    RpcResult<DroneSamples> getTimeseriesRange( DroneRef const& drone, QString const& name = {},
+                                                std::optional<qint64> startMs = {},
+                                                std::optional<qint64> endMs   = {} ) const;
+
+    // Cancels active calls and prevents queued jobs from starting more calls.
+    // A new connection/session uses a new client instance.
+    void cancelAll();
 
 private:
-    std::shared_ptr<grpc::Channel>  _channel{nullptr};
-    std::unique_ptr<dronegroundcontrol::DeviceFunctions::Stub>      _deviceStub{nullptr};
-    std::unique_ptr<dronegroundcontrol::AttributeFunctions::Stub>   _attributeStub{nullptr};
-    std::unique_ptr<dronegroundcontrol::TimeseriesFunctions::Stub>  _timeseriesStub{nullptr};
+    struct Impl;
+    std::unique_ptr<Impl> _impl;
 };
-
-#endif // GRPCCLIENT_H
