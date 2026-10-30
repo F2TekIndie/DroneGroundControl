@@ -166,6 +166,23 @@ QVariant DroneManager::data( QModelIndex const& index, int role ) const{
         return drone._type;
     case StateRole:
         return attributes._state;
+    case StateNameRole:
+        switch ( attributes._state ){
+        case DS_INIT:
+            return QStringLiteral( "Initializing" );
+        case DS_OFFLINE:
+            return QStringLiteral( "Offline" );
+        case DS_ONLINE:
+            return QStringLiteral( "Online" );
+        case DS_GROUNDED:
+            return QStringLiteral( "Grounded" );
+        case DS_STATIONARY:
+            return QStringLiteral( "Stationary" );
+        case DS_TRAVELING:
+            return QStringLiteral( "Traveling" );
+        default:
+            return QStringLiteral( "Unknown" );
+        }
     case OnlineRole:
         return attributes._online;
     case LatitudeRole:
@@ -183,7 +200,8 @@ QVariant DroneManager::data( QModelIndex const& index, int role ) const{
 QHash<int, QByteArray> DroneManager::roleNames() const{
     return { { IdRole, "droneId" },        { ClientIdRole, "clientId" },   { NameRole, "name" },
              { TypeRole, "type" },         { StateRole, "state" },         { OnlineRole, "online" },
-             { LatitudeRole, "latitude" }, { LongitudeRole, "longitude" }, { HasPositionRole, "hasPosition" } };
+             { LatitudeRole, "latitude" }, { LongitudeRole, "longitude" }, { HasPositionRole, "hasPosition" },
+             { StateNameRole, "stateName" } };
 }
 
 //
@@ -206,6 +224,32 @@ void DroneManager::setEndpoint( QString const& endpoint ){
 }
 
 //
+void DroneManager::setSelectedDroneId( QString const& id ){
+    if ( _selectedDroneId == id || ( !id.isEmpty() && indexOf( id ) < 0 ) )
+        return;
+    _selectedDroneId = id;
+    emit selectedDroneIdChanged();
+}
+
+//
+QVariantMap DroneManager::selectedDronePosition() const{
+    const auto attributes = _attributes.value( _selectedDroneId );
+    return attributes._hasPosition ? PositionValue( attributes._pos ) : QVariantMap{};
+}
+
+//
+QVariantMap DroneManager::selectedDroneData() const{
+    const auto row = indexOf( _selectedDroneId );
+    if ( row < 0 )
+        return {};
+    QVariantMap result;
+    const auto roles = roleNames();
+    for ( auto it = roles.cbegin(); it != roles.cend(); ++it )
+        result.insert( QString::fromUtf8( it.value() ), data( index( row ), it.key() ) );
+    return result;
+}
+
+//
 void DroneManager::resetSession( bool clearModel ){
     _client->cancelAll();
     _client = std::make_shared<gRPCClient>( _endpoint );
@@ -216,6 +260,7 @@ void DroneManager::resetSession( bool clearModel ){
         _drones.clear();
         _attributes.clear();
         endResetModel();
+        setSelectedDroneId( {} );
     }
 }
 
@@ -291,6 +336,8 @@ void DroneManager::replaceDevices( QVector<Drone> devices ){
         endResetModel();
     else if ( !_drones.isEmpty() )
         emit dataChanged( index( 0 ), index( _drones.size() - 1 ) );
+    if ( !ids.contains( _selectedDroneId ) )
+        setSelectedDroneId( {} );
 }
 
 //
@@ -315,7 +362,7 @@ void DroneManager::applyAttributes( QString const& id, DroneAttributes const& at
     if ( row < 0 )
         return;
     _attributes.insert( id, attributes );
-    emit dataChanged( index( row ), index( row ), { StateRole, OnlineRole, LatitudeRole, LongitudeRole, HasPositionRole } );
+    emit dataChanged( index( row ), index( row ), { StateRole, StateNameRole, OnlineRole, LatitudeRole, LongitudeRole, HasPositionRole } );
 }
 
 //
@@ -386,6 +433,8 @@ quint64 DroneManager::deleteDrone( QString const& id ){
                 _drones.removeAt( row );
                 _attributes.remove( id );
                 endRemoveRows();
+                if ( _selectedDroneId == id )
+                    setSelectedDroneId( {} );
             }
             return true;
         } );

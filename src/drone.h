@@ -19,6 +19,16 @@ struct Drone{
 };
 
 //
+enum DroneState{
+    DS_INIT     = 0,
+    DS_OFFLINE  = 1,
+    DS_ONLINE   = 2,
+    DS_GROUNDED = 3,
+    DS_STATIONARY   = 4,
+    DS_TRAVELING    = 5
+};
+
+//
 struct DroneAttributes{
     quint32       _state{};
     bool          _online{};

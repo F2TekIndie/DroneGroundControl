@@ -273,6 +273,29 @@ private slots:
         QVERIFY( !empty );
         QCOMPARE( empty.error().code, RpcErrorCode::InvalidRequest );
     }
+    void managerSelection(){
+        DroneManager manager;
+        manager.setEndpoint( endpoint );
+        QSignalSpy selection( &manager, &DroneManager::selectedDroneIdChanged );
+        QVERIFY( manager.selectedDronePosition().isEmpty() );
+        manager.refreshDrones();
+        QTRY_VERIFY_WITH_TIMEOUT( !manager.busy(), 2000 );
+        manager.setSelectedDroneId( Id );
+        QCOMPARE( manager.selectedDroneId(), Id );
+        QCOMPARE( selection.count(), 1 );
+        QCOMPARE( manager.selectedDronePosition().value( "latitude" ).toDouble(), 52.0 );
+        QCOMPARE( manager.selectedDronePosition().value( "longitude" ).toDouble(), 13.0 );
+        manager.setSelectedDroneId( Id );
+        QCOMPARE( selection.count(), 1 );
+        manager.setSelectedDroneId( "missing" );
+        QCOMPARE( manager.selectedDroneId(), Id );
+        manager.deleteDrone( Id );
+        QTRY_VERIFY_WITH_TIMEOUT( !manager.busy(), 2000 );
+        QVERIFY( manager.selectedDroneId().isEmpty() );
+        QVERIFY( manager.selectedDronePosition().isEmpty() );
+        QCOMPARE( selection.count(), 2 );
+    }
+
     void managerSeparateAttributes(){
         DroneManager manager;
         manager.setEndpoint( endpoint );

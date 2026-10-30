@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import QtLocation
 import QtPositioning
 import DroneGroundControl
@@ -15,6 +16,36 @@ Rectangle{
     Layout.fillHeight: true
 
     required property DroneManager dm
+    property var selectedPosition: QtPositioning.coordinate()
+
+    function showSelectedDrone(){
+        const position = dm.selectedDronePosition()
+        selectedPosition = position.latitude !== undefined
+            ? QtPositioning.coordinate( position.latitude, position.longitude )
+            : QtPositioning.coordinate()
+        if ( selectedPosition.isValid )
+            map.center = selectedPosition
+    }
+
+    Component.onCompleted: showSelectedDrone()
+
+    Connections{
+        target: root.dm
+        function onSelectedDroneIdChanged(){
+            droneDialog.close()
+            root.showSelectedDrone()
+        }
+    }
+
+    DroneDialog{
+        id: droneDialog
+        objectName: "droneHoverDialog"
+        drone: ({})
+        hoverMode: true
+        hoverTarget: selectedDrone
+        triggerHovered: infoActive.hovered && droneMarker.visible
+        onAboutToShow: drone = root.dm.selectedDroneData()
+    }
 
     Plugin{
         id: mapPlugin
@@ -26,6 +57,30 @@ Rectangle{
         plugin: mapPlugin
         center: QtPositioning.coordinate(59, 10)
         zoomLevel: 13
+
+        MapQuickItem{
+            id: droneMarker
+            coordinate: root.selectedPosition
+            visible: root.selectedPosition.isValid
+            anchorPoint.x: 8
+            anchorPoint.y: 8
+
+            HoverHandler{
+                id: infoActive
+            }
+
+            sourceItem: Rectangle{
+                id: selectedDrone
+                objectName: "droneMarker"
+                width: 16
+                height: 16
+                radius: 8
+                color: "red"
+                border.color: "#4A5B6B"
+                border.width: 3
+
+            }
+        }
 
         WheelHandler {
             id: wheel

@@ -63,7 +63,7 @@ target_include_directories(dgc PRIVATE
 qt_add_qml_module(dgc
     URI DroneGroundControl
     VERSION 1.0
-    QML_FILES ui/Main.qml ui/DroneList.qml ui/CameraView.qml ui/DroneMap.qml
+    QML_FILES ui/Main.qml ui/DroneList.qml ui/DroneListItem.qml ui/DroneDialog.qml ui/CameraView.qml ui/DroneMap.qml
     RESOURCE_PREFIX /dgc
     NO_RESOURCE_TARGET_PATH
     SOURCES src/video/receiver.h src/dronemanager.h

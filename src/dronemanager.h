@@ -23,6 +23,7 @@ class DroneManager : public QAbstractListModel
     Q_PROPERTY( QString endpoint READ endpoint WRITE setEndpoint NOTIFY endpointChanged )
     Q_PROPERTY( bool busy READ busy NOTIFY busyChanged )
     Q_PROPERTY( QString lastError READ lastError NOTIFY lastErrorChanged )
+    Q_PROPERTY( QString selectedDroneId READ selectedDroneId WRITE setSelectedDroneId NOTIFY selectedDroneIdChanged )
 public:
     enum Role{
         IdRole = Qt::UserRole + 1,
@@ -33,7 +34,8 @@ public:
         OnlineRole,
         LatitudeRole,
         LongitudeRole,
-        HasPositionRole
+        HasPositionRole,
+        StateNameRole
     };
     Q_ENUM( Role )
     explicit DroneManager( QObject* parent = nullptr );
@@ -53,6 +55,12 @@ public:
         return _endpoint;
     }
     void setEndpoint( QString const& endpoint );
+    QString selectedDroneId() const{
+        return _selectedDroneId;
+    }
+    void setSelectedDroneId( QString const& id );
+    Q_INVOKABLE QVariantMap selectedDronePosition() const;
+    Q_INVOKABLE QVariantMap selectedDroneData() const;
     bool busy() const{
         return _pending != 0;
     }
@@ -80,6 +88,7 @@ signals:
     void endpointChanged();
     void busyChanged();
     void lastErrorChanged();
+    void selectedDroneIdChanged();
     // IDs correlate replies with requests. Payloads contain only application/QML values.
     void operationFinished( quint64 requestId, QString operation, QString droneId, QVariant result );
     void operationFailed( quint64 requestId, QString operation, QString droneId, QString code, QString message );
@@ -151,6 +160,7 @@ private:
     quint64 fetchAttributes( QString const& id );
 
     QVector<Drone>                  _drones;
+    QString                         _selectedDroneId;
     QHash<QString, DroneAttributes> _attributes;
     quint32                         _clientId{ 99 };
     //
