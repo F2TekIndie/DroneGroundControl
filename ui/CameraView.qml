@@ -21,11 +21,28 @@ Rectangle{
         anchors.fill: parent
         anchors.margins: 8
         spacing: 8
-        GstGLQt6VideoItem {
-            objectName: "videoItem"
+        Item{
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.minimumHeight: 120
+            clip: true
+
+            GstGLQt6VideoItem {
+                id: videoItem
+                objectName: "videoItem"
+                anchors.fill: parent
+            }
+            Label {
+                id: overlayText
+                objectName: "overlayText"
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.margins: 8
+                color: "yellow"
+                text: "Here could be some live drone information."
+                wrapMode: Text.Wrap
+            }
         }
         Label {
             Layout.fillWidth: true
@@ -38,5 +55,4 @@ Rectangle{
             Button { text: "Stop"; enabled: root.receiver.active; onClicked: root.receiver.stop() }
         }
     }
-
 }
